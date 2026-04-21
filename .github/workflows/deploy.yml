@@ -35,14 +35,18 @@ jobs:
         aws-region: ap-south-1   
 
     # Launch EC2 + Deploy
-    - name: Launch EC2 and Deploy App
+    - name: Launch EC2 and Deploy
       run: |
         INSTANCE_ID=$(aws ec2 run-instances \
           --image-id ami-0f5ee92e2d63afc18 \
           --count 1 \
           --instance-type t2.micro \
-          --key-name my-key \
           --security-groups default \
+          --user-data '#!/bin/bash
+          apt update -y
+          apt install docker.io -y
+          docker pull ${{ secrets.DOCKER_USERNAME }}/my-node-app
+          docker run -d -p 80:3000 ${{ secrets.DOCKER_USERNAME }}/my-node-app' \
           --query 'Instances[0].InstanceId' \
           --output text)
 
@@ -54,18 +58,5 @@ jobs:
           --instance-ids $INSTANCE_ID \
           --query 'Reservations[0].Instances[0].PublicIpAddress' \
           --output text)
-
-        echo "Public IP: $PUBLIC_IP"
-
-        echo "Waiting for SSH..."
-        sleep 60
-
-        # Install Docker & run app
-        ssh -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP << EOF
-          sudo apt update
-          sudo apt install docker.io -y
-          sudo docker pull ${{ secrets.DOCKER_USERNAME }}/my-node-app
-          sudo docker run -d -p 80:3000 ${{ secrets.DOCKER_USERNAME }}/my-node-app
-        EOF
 
         echo "App deployed at http://$PUBLIC_IP"
