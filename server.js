@@ -8,7 +8,7 @@ app.use(express.json());
 
 // Routes
 app.get('/', (req, res) => {
-    res.send('Hello, Node.js App Running 🚀');
+    res.send('Hello, Node.js App Running 🚀 by mohit');
 });
 
 app.get('/api/data', (req, res) => {
